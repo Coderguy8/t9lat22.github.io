@@ -638,7 +638,7 @@
   </style>
   <p class="warn"></p>
 
-  <iframe class="frame" src="/encrypted.html"></iframe>
+  <iframe class="frame" src="/sorry.html"></iframe>
   <style>
     .frame{
       width:100%;
@@ -1454,22 +1454,6 @@ if (selectedBackground) {
       measurementId: "G-NEXJFPJPCP"
     };
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    const imgBox = document.getElementById("imgBox");
-
-    // Listen to changes in globalImage in real-time
-    const imageRef = ref(db, "globalImage");
-    onValue(imageRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data && data.url) {
-        imgBox.innerHTML = `<img src="${data.url}">`;
-      } else {
-        imgBox.innerHTML = "";
-      }
-    });
   </script>
   <style>
       #imgBox img {
@@ -1495,4 +1479,3 @@ if (selectedBackground) {
 
 </body>
 </html>
-
