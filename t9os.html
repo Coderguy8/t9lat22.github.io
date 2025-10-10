@@ -733,7 +733,9 @@ backdrop-filter: blur(7px);
 
 <div id="searchDiv">
   <button class="close-btn2" onclick="document.getElementById('searchDiv').style.display = 'none';">●</button>
-      <button class="full-btn" onclick="fullscreenIframe()">●</button>
+      <button class="full-btn" onclick="fullscreenIframe2()">●</button>
+      <h3 style="  left: 50%; color:white; top:-9.5px; position: absolute;   transform: translateX(-50%);" >Browser</h3>
+
 
   &nbsp;&nbsp;&nbsp;&nbsp; <!-- Adds manual spacing -->
   <a href='/t9os.html'>
@@ -760,7 +762,7 @@ backdrop-filter: blur(7px);
 
   <p class="warn"></p>
 
-  <iframe class="frame" src="https://test38834-4kx4.vercel.app"></iframe>
+  <iframe id="frame3" class="frame" src="https://test38834-4kx4.vercel.app"></iframe>
   <style>
     .frame{
       width:100%;
@@ -772,8 +774,22 @@ backdrop-filter: blur(7px);
       left:0;
     }
   </style>
+
+   <script>
+    function fullscreenIframe2() {
+      let iframe = document.getElementById("frame3");
+      if (iframe.requestFullscreen) {
+        iframe.requestFullscreen();
+      } else if (iframe.mozRequestFullScreen) { 
+        iframe.mozRequestFullScreen();
+      } else if (iframe.webkitRequestFullscreen) { 
+        iframe.webkitRequestFullscreen();
+      } else if (iframe.msRequestFullscreen) { 
+        iframe.msRequestFullscreen();
+      }
+    }
+  </script>
            
-     
         
        
 
