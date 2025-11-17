@@ -1853,13 +1853,8 @@ if (selectedBackground) {
 
 
 <script>
-<<<<<<< HEAD
 const DRAG_HEIGHT = 50;
 const RESIZE_MARGIN = 20;
-=======
-const DRAG_HEIGHT = 50; 
-const RESIZE_MARGIN = 20; 
->>>>>>> f6f950aa617f4f7f218c85d46757a8504773ad46
 
 const divs = [
   document.getElementById('settingsDiv'),
@@ -1874,26 +1869,11 @@ divs.forEach(box => {
   let isDragging = false;
   let isResizing = false;
 
-<<<<<<< HEAD
   let dragOffsetX = 0, dragOffsetY = 0;
-=======
-  let startLeft = 0, startTop = 0, startWidth = 0, startHeight = 0;
-  let pointerDownX = 0, pointerDownY = 0;
->>>>>>> f6f950aa617f4f7f218c85d46757a8504773ad46
 
-<<<<<<< HEAD
   let startWidth = 0, startHeight = 0;
   let startMouseX = 0, startMouseY = 0;
-=======
-  function checkBottomRight(e) {
-    const rect = box.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    return (x >= rect.width - RESIZE_MARGIN && y >= rect.height - RESIZE_MARGIN);
-  }
->>>>>>> f6f950aa617f4f7f218c85d46757a8504773ad46
 
-<<<<<<< HEAD
   function isInBottomRight(e) {
     const r = box.getBoundingClientRect();
     return (
@@ -1901,41 +1881,9 @@ divs.forEach(box => {
       e.clientY >= r.bottom - RESIZE_MARGIN
     );
   }
-=======
-  box.addEventListener('pointermove', e => {
-    if (isDragging || isResizing) return;
-    const rect = box.getBoundingClientRect();
-    const offsetY = e.clientY - rect.top;
 
-    if (offsetY <= DRAG_HEIGHT) {
-      box.style.cursor = 'grab';
-    } else if (checkBottomRight(e)) {
-      box.style.cursor = 'nwse-resize';
-    } else {
-      box.style.cursor = 'default';
-    }
-  });
->>>>>>> f6f950aa617f4f7f218c85d46757a8504773ad46
-
-<<<<<<< HEAD
   box.addEventListener("pointermove", e => {
     if (isDragging || isResizing) return;
-=======
-  box.addEventListener('pointerdown', e => {
-    const rect = box.getBoundingClientRect();
-    const offsetY = e.clientY - rect.top;
-
-    document.body.style.userSelect = 'none';
-
-    // Dragging
-    if (offsetY <= DRAG_HEIGHT) {
-      isDragging = true;
-      box.style.cursor = 'grabbing';
-      pointerDownX = e.clientX - rect.left;
-      pointerDownY = e.clientY - rect.top;
-      return;
-    }
-
 
     const rect = box.getBoundingClientRect();
     const offsetY = e.clientY - rect.top;
@@ -1946,34 +1894,14 @@ divs.forEach(box => {
       box.style.cursor = "nwse-resize";
     } else {
       box.style.cursor = "default";
-    // Resizing - bottom RIGHT corner only
-    if (checkBottomRight(e)) {
-      isResizing = true;
-
-      startLeft = rect.left;
-      startTop = rect.top;
-      startWidth = rect.width;
-      startHeight = rect.height;
-
-      pointerDownX = e.clientX;
-      pointerDownY = e.clientY;
-
-      box.style.cursor = 'nwse-resize';
     }
   });
 
   box.addEventListener("pointerdown", e => {
     const rect = box.getBoundingClientRect();
     const offsetY = e.clientY - rect.top;
-  document.addEventListener('pointermove', e => {
-    // Drag
-    if (isDragging) {
-      let newX = e.clientX - pointerDownX;
-      let newY = e.clientY - pointerDownY;
 
     document.body.style.userSelect = "none";
-      newX = Math.max(0, Math.min(newX, window.innerWidth - box.offsetWidth));
-      newY = Math.max(0, Math.min(newY, window.innerHeight - box.offsetHeight));
 
     // DRAGGING
     if (offsetY <= DRAG_HEIGHT) {
@@ -1985,8 +1913,6 @@ divs.forEach(box => {
 
       box.style.cursor = "grabbing";
       return;
-      box.style.left = newX + 'px';
-      box.style.top = newY + 'px';
     }
 
     // RESIZING (BOTTOM RIGHT ONLY)
@@ -2002,10 +1928,6 @@ divs.forEach(box => {
       return;
     }
   });
-    // Resize
-    if (isResizing) {
-      const newWidth = Math.max(50, startWidth + (e.clientX - pointerDownX));
-      const newHeight = Math.max(50, startHeight + (e.clientY - pointerDownY));
 
   document.addEventListener("pointermove", e => {
     // DRAGGING
@@ -2015,8 +1937,6 @@ divs.forEach(box => {
 
       box.style.left = newLeft + "px";
       box.style.top = newTop + "px";
-      box.style.width = newWidth + 'px';
-      box.style.height = newHeight + 'px';
     }
 
     // RESIZING
@@ -2038,13 +1958,9 @@ divs.forEach(box => {
     isResizing = false;
     document.body.style.userSelect = "";
   });
-  document.addEventListener('pointerup', () => {
-    isDragging = false;
-    isResizing = false;
-    document.body.style.userSelect = '';
-  });
 });
 </script>
+
 
 
 
