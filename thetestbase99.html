@@ -1878,24 +1878,20 @@ function parseTranslate(transform) {
 }
 
 // Function to stabilize the position and clear conflicting CSS
-// This function is now ONLY called on pointerdown
 function stabilizePosition(win) {
     const currentRect = win.getBoundingClientRect();
     const cs = getComputedStyle(win);
     const [tx, ty] = parseTranslate(cs.transform);
 
-    // Calculate the absolute position
     const absoluteX = currentRect.left + tx + window.scrollX;
     const absoluteY = currentRect.top + ty + window.scrollY;
     
-    // Apply stable CSS properties
-    win.style.position = 'fixed'; // Use fixed position to counter initial CSS
+    win.style.position = 'fixed'; 
     win.style.left = Math.round(absoluteX) + 'px';
     win.style.top  = Math.round(absoluteY) + 'px';
     win.style.width = currentRect.width + 'px';
     win.style.height = currentRect.height + 'px';
 
-    // Clear conflicting CSS properties
     win.style.inset = 'auto'; 
     win.style.margin = '0'; 
     win.style.transform = 'none';
@@ -1903,14 +1899,11 @@ function stabilizePosition(win) {
 
 
 windows.forEach(win => {
-  // *** We NO LONGER stabilize position here ***
-  // stabilizePosition(win); // This was the line causing the error
-
   let dragging=false, resizing=false, resizeDir='';
   let grabOffset={x:0,y:0};
   let start={};
 
-  // Only allow resizing on the bottom edge and bottom corners (S, SE, SW)
+  // Resize only on bottom (S, SE, SW)
   function getResizeDir(e) {
     const r = win.getBoundingClientRect();
     const x = e.clientX - r.left;
@@ -1925,7 +1918,7 @@ windows.forEach(win => {
     return dir;
   }
 
-  // Cursor feedback for drag/resize zones
+  // Cursor feedback
   win.addEventListener('pointermove', e=>{
     if (dragging||resizing) return;
     const dir=getResizeDir(e);
@@ -1947,19 +1940,26 @@ windows.forEach(win => {
   win.addEventListener('pointerdown', e=>{
     if (e.button!==0) return;
     
+    // *** THE REAL FIX IS HERE ***
+    // We must stabilize the position on the FIRST click, no matter where it is.
+    // This runs ONCE per window to lock it from its CSS-centered position.
+    if (!win.dataset.stabilized) {
+      stabilizePosition(win); 
+      win.dataset.stabilized = 'true';
+    }
+    
     const rect = win.getBoundingClientRect();
     const dir = getResizeDir(e);
     const isDragZone = (e.clientY - rect.top <= DRAG_HEIGHT);
     
+    // Now, if it's not a drag or resize click, we can safely return.
     if (!dir && !isDragZone) {
-      return; // Do nothing if click is in the non-active body
+      return; 
     }
-
-    // *** THIS IS THE FIX ***
-    // We now stabilize the position ONLY when the user clicks,
-    // guaranteeing the element is visible and has a real position.
-    stabilizePosition(win); 
     
+    // Re-run stabilize just to be safe if a resize/drag happened
+    stabilizePosition(win); 
+
     if (dir) {
       // START RESIZING
       resizing=true; resizeDir=dir;
@@ -2050,7 +2050,7 @@ windows.forEach(win => {
 
 
 
-<!--FIXED SCRIP 12-->
+<!--FIXED SCRIP 13-->
 
 
 
