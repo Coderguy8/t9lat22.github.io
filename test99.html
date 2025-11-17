@@ -555,15 +555,25 @@ border-radius: 20px;
   a:focus{
      outline:none;
   }
-body {
-  overflow: auto; 
-  scrollbar-width: none; 
-  -ms-overflow-style: none; 
+/* Hide scrollbar on the whole page but keep scrolling */
+html, body {
+  height: 100%;
+  overflow: hidden; /* hide the scrollbar container */
 }
 
-body::-webkit-scrollbar {
-  display: none; 
+body {
+  overflow: auto; /* still allow scrolling */
+  margin: 0;
+  padding: 0;
+  width: 100vw; /* prevent extra space from scrollbar */
 }
+
+/* Hide scrollbar for Webkit browsers */
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 
  
 </style>
