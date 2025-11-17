@@ -1871,7 +1871,6 @@ divs.forEach(box => {
 
   let startX = 0, startY = 0;
   let startLeft = 0, startTop = 0;
-  let startWidth = 0, startHeight = 0;
 
   /* ---------- CHECK IF IN BOTTOM RIGHT RESIZE AREA ---------- */
   function inBottomRightCorner(e) {
@@ -1897,37 +1896,40 @@ divs.forEach(box => {
     const rect = box.getBoundingClientRect();
     const offsetY = e.clientY - rect.top;
 
+    // Store the initial mouse position AND the element's position
     startX = e.clientX;
     startY = e.clientY;
-    startLeft = parseInt(getComputedStyle(box).left) || 0;
-    startTop = parseInt(getComputedStyle(box).top) || 0;
-    startWidth = rect.width;
-    startHeight = rect.height;
+    startLeft = rect.left;
+    startTop = rect.top;
 
     // Drag top
     if (offsetY <= DRAG_HEIGHT) {
       isDragging = true;
       box.style.cursor = "grabbing";
-      e.preventDefault(); // Prevent text selection
+      e.preventDefault();
     }
 
     // Resize bottom-right ONLY
     else if (inBottomRightCorner(e)) {
       isResizing = true;
       box.style.cursor = "nwse-resize";
-      e.preventDefault(); // Prevent text selection
+      e.preventDefault();
     }
 
-    document.body.style.userSelect = "none";
+    if (isDragging || isResizing) {
+      document.body.style.userSelect = "none";
+    }
   });
 
   /* ---------- POINTER MOVE ---------- */
   function handlePointerMove(e) {
     if (isDragging) {
-      // ZERO OFFSET DRAGGING - calculate movement from start position
+      // TRUE ZERO-OFFSET DRAGGING
+      // Calculate how far the mouse has moved from the original click point
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
       
+      // Apply that exact movement to the original element position
       let newX = startLeft + deltaX;
       let newY = startTop + deltaY;
 
@@ -1940,15 +1942,19 @@ divs.forEach(box => {
     }
 
     if (isResizing) {
-      // ZERO OFFSET RESIZING - calculate size change from start position
+      // Calculate size change from start position
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
 
-      const newWidth = Math.max(100, startWidth + deltaX);
-      const newHeight = Math.max(100, startHeight + deltaY);
+      const newWidth = Math.max(100, box.offsetWidth + deltaX);
+      const newHeight = Math.max(100, box.offsetHeight + deltaY);
 
       box.style.width = newWidth + "px";
       box.style.height = newHeight + "px";
+      
+      // Update start position for continuous resizing
+      startX = e.clientX;
+      startY = e.clientY;
     }
   }
 
@@ -1958,17 +1964,11 @@ divs.forEach(box => {
       isDragging = false;
       isResizing = false;
       document.body.style.userSelect = "";
-      
-      // Reset cursor when done
-      if (!isDragging && !isResizing) {
-        box.style.cursor = "default";
-      }
     }
   }
 
-  // Use capture phase to ensure we get the events even if they bubble
-  document.addEventListener('pointermove', handlePointerMove, true);
-  document.addEventListener('pointerup', handlePointerUp, true);
+  document.addEventListener('pointermove', handlePointerMove);
+  document.addEventListener('pointerup', handlePointerUp);
   
   // Prevent context menu during drag/resize
   box.addEventListener('contextmenu', e => {
@@ -1978,15 +1978,7 @@ divs.forEach(box => {
   });
 });
 </script>
-
-
-
-
-
-
-
-
-<!--FIXED SCRIP 18-->
+<!--FIXED SCRIP 19-->
 
 
 
