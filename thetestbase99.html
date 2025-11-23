@@ -589,11 +589,11 @@ border: 1px solid rgba(255, 255, 255, 0.15);
 
 <!-- Navbar -->
 <div id="navbar" class="navbar">
-  <a onclick="t9()">
-    <img src="favicon.png">
-  </a>
   <a id="toggleDivButton">
     <img src="gameicon.png">
+  </a>
+  <a onclick="terminal()">
+    <img src="terminal.png">
   </a>
    <a onclick="ai()">
     <img src="ai.png">
@@ -922,84 +922,7 @@ backdrop-filter: blur(7px);
           
 </div>
 
-<div id="t9Div">
-  <button class="close-btn2" onclick="document.getElementById('t9Div').style.display = 'none';">●</button>
-      <h4 style="  left: 50%; color:white; top:-9.5px; position: absolute;   transform: translateX(-50%);" >T9 OS</h4>
 
-
-  &nbsp;&nbsp;&nbsp;&nbsp; 
-  
-  <div class="btn-container">
-    <a onclick="terminal()"><img class="t9btn" src="terminal.png"></a>
-  </div>
-<script>
-  function terminal() {
-    const div = document.getElementById('terminalDiv');
-    if (div.style.display === 'block') {
-      div.style.display = 'none';
-    } else {
-      div.style.display = 'block';
-    }
-    document.getElementById('t9Div').style.display = 'none';
-  }
-</script>
-
-
-
-
-</script>
-</script>
-  <style>
-    .btn-container {
-      display: flex;
-      gap: 10px; /* space between buttons */
-      position: absolute;
-      top: 30px;
-      left: 30px;
-    }
-
-    .t9btn {
-      width: 30px;
-      height: 30px;
-      border-radius: 15px;
-      transition: all 0.3s ease;
-      font-family: sans-serif;
-      font-size: 15px;
-      border: #ffffff 0.2px solid;
-      display: inline-block;
-      cursor: pointer;
-    }
-  </style>
-  </a>
-<style>
-  .warn{
-    top:0;
-    font-family: sans-serif;
-    position: absolute;
-    right:0;
-  }
-   .close-btn2 {
-    background: none;
-    border: none;
-    color: rgb(255, 0, 0);
-    font-size: 24px;
-    cursor: pointer;
-    padding: 0;
-    font-size:20px;
-    top:0;
-} 
-
-  </style>
-
-  <p class="warn"></p>
-
-
-           
-        
-       
-
-          
-</div>
 <div id="searchDiv">
   <button class="close-btn2" onclick="document.getElementById('searchDiv').style.display = 'none';">●</button>
       <button class="full-btn" onclick="fullscreenIframe2()">●</button>
