@@ -26,14 +26,18 @@
 
 @import url('https://fonts.googleapis.com/css?family=Luckiest+Guy');
 
- body {
+body {
+  /* Keep your gradient here as a fallback */
   background: linear-gradient(to bottom, #000000, #3a0057, #550075);
   background-repeat: no-repeat;
-  background-size: cover;   /* make sure images cover the whole screen */
+  background-size: cover; 
+  
+  /* Structural CSS */
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
   text-decoration: none;
+  height: 100vh;
 }
 
   a{
@@ -1370,70 +1374,67 @@ backdrop-filter: blur(7px);
 
 
 <script>
-// ---------------- CUSTOM BACKGROUND UPLOADER V4 (Max Quality, No Resize) ---------------- //
+// ---------------- CUSTOM BACKGROUND UPLOADER V8 (No Class, Multi-Background Inline Fix) ---------------- //
 
-// --- Database Configuration ---
 const DB_NAME = 'userBackgroundDB';
 const STORE_NAME = 'backgroundStore';
 const DB_VERSION = 1;
-const IMG_KEY = 'customBG'; // The key we'll use to store our image in the DB
-
-// A variable to hold the temporary URL for our loaded image
+const IMG_KEY = 'customBG'; 
 let currentObjectUrl = null;
 
-// --- 1. Database Helper Functions (No changes) ---
+// The gradient CSS you provided, stored as a string variable
+const GRADIENT_CSS = 'linear-gradient(to bottom, #000000, #3a0057, #550075)';
+
+
+// --- 1. Database Helper Functions (Same as before) ---
+// (Functions openDB, saveBlob, getBlob, deleteBlob remain identical)
 
 function openDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = (e) => {
-      const db = e.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
-      }
-    };
-    request.onsuccess = (e) => resolve(e.target.result);
-    request.onerror = (e) => reject(new Error(`IndexedDB error: ${e.target.errorCode}`));
-  });
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+            }
+        };
+        request.onsuccess = (e) => resolve(e.target.result);
+        request.onerror = (e) => reject(new Error(`IndexedDB error: ${e.target.errorCode}`));
+    });
 }
-
 async function saveBlob(blob) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    const request = store.put(blob, IMG_KEY);
-    tx.oncomplete = () => resolve();
-    tx.onerror = (e) => reject(new Error(`Transaction error: ${e.target.error}`));
-  });
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.put(blob, IMG_KEY);
+        tx.oncomplete = () => resolve();
+        tx.onerror = (e) => reject(new Error(`Transaction error: ${e.target.error}`));
+    });
 }
-
 async function getBlob() {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const store = tx.objectStore(STORE_NAME);
-    const request = store.get(IMG_KEY);
-    request.onsuccess = (e) => resolve(e.target.result);
-    request.onerror = (e) => reject(new Error(`Transaction error: ${e.target.error}`));
-  });
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.get(IMG_KEY);
+        request.onsuccess = (e) => resolve(e.target.result);
+        request.onerror = (e) => reject(new Error(`Transaction error: ${e.target.error}`));
+    });
 }
-
 async function deleteBlob() {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    const request = store.delete(IMG_KEY);
-    tx.oncomplete = () => resolve();
-    tx.onerror = (e) => reject(new Error(`Transaction error: ${e.target.error}`));
-  });
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.delete(IMG_KEY);
+        tx.oncomplete = () => resolve();
+        tx.onerror = (e) => reject(new Error(`Transaction error: ${e.target.error}`));
+    });
 }
 
-// --- 2. Image Resizing Function (REMOVED) ---
-// We are no longer resizing, so the function is gone.
 
-// --- 3. Main Application Logic (UPDATED) ---
+// --- 2. Main Application Logic (UPDATED to use inline multi-background) ---
 
 async function applyCustomBG() {
   if (currentObjectUrl) {
@@ -1443,73 +1444,78 @@ async function applyCustomBG() {
     const blob = await getBlob();
     if (blob) {
       currentObjectUrl = URL.createObjectURL(blob);
-      document.body.style.backgroundImage = `url(${currentObjectUrl})`;
-      document.body.style.backgroundSize = "cover";
-      document.body.style.backgroundRepeat = "no-repeat";
+      
+      const imageUrl = `url(${currentObjectUrl})`;
+      
+      // FIX: Apply the image AND the gradient as two separate layers.
+      // Image is the first layer (on top), gradient is the second (bottom).
+      document.body.style.backgroundImage = `${imageUrl}, ${GRADIENT_CSS}`;
+      
+      // FIX: Apply 'contain' ONLY to the first image layer to prevent pixelation, 
+      // and 'cover' to the second layer (the gradient) to fill the screen.
+      document.body.style.backgroundSize = `contain, cover`;
+      
+      // Center the image layer, start the gradient at 0 0.
+      document.body.style.backgroundPosition = `center, 0 0`; 
+      
+      // Do not repeat the image layer.
+      document.body.style.backgroundRepeat = `no-repeat`;
+      
     } else {
-      document.body.style.backgroundImage = "";
+      // If no image, revert to using only the gradient defined in your original CSS
+      document.body.style.backgroundImage = ''; 
+      document.body.style.backgroundSize = '';
+      document.body.style.backgroundPosition = '';
+      document.body.style.backgroundRepeat = '';
     }
   } catch (error) {
     console.error("Failed to apply background:", error);
-    document.body.style.backgroundImage = "";
+    document.body.style.backgroundImage = '';
   }
 }
 
-// Listen for file upload (*** THIS SECTION IS UPDATED ***)
-document.getElementById("bgUpload").addEventListener("change", async (ev) => {
-  const file = ev.target.files[0];
-  if (!file || !file.type.startsWith('image/')) {
-    if (file) alert("Please upload a valid image file.");
-    ev.target.value = null;
-    return;
-  }
+// --- 3. Event Listeners (Same as before) ---
+window.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("bgUpload").addEventListener("change", async (ev) => {
+        const file = ev.target.files[0];
+        if (!file || !file.type.startsWith('image/')) {
+            if (file) alert("Please upload a valid image file.");
+            ev.target.value = null;
+            return;
+        }
+        document.body.style.cursor = 'wait'; 
+        try {
+            await saveBlob(file); 
+            await applyCustomBG();
+            alert("Custom background applied! 🎉");
+        } catch (error) {
+            console.error("Failed to process or save image:", error);
+            const errorMsg = error.message.includes('QuotaExceededError') 
+                             ? "Storage quota exceeded." 
+                             : `Error: ${error.message}`;
+            alert(`Sorry, there was an error: ${errorMsg}`);
+        } finally {
+            document.body.style.cursor = 'default';
+            ev.target.value = null;
+        }
+    });
 
-  // Provide user feedback (saving large files can take a moment)
-  document.body.style.cursor = 'wait';
-  const processingAlert = document.createElement('div');
-  processingAlert.textContent = 'Saving image... ⏳';
-  processingAlert.style = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 20px;background:rgba(0,0,0,0.7);color:white;border-radius:8px;z-index:9999;';
-  document.body.appendChild(processingAlert);
-  
-  try {
-    // --- NEW LOGIC ---
-    // We save the original file directly. No resizing.
-    // The 'file' object is already a Blob, so we can save it.
-    await saveBlob(file);
-    // --- END NEW LOGIC ---
-
-    await applyCustomBG(); // Apply the new background
+    document.getElementById("removeCustomBG").addEventListener("click", async () => {
+        try {
+            await deleteBlob();
+            location.reload(); 
+        } catch (error) {
+            console.error("Failed to remove background:", error);
+            alert("Error removing background.");
+        }
+    });
     
-    alert("Custom background applied! 🎉");
-
-  } catch (error) {
-    console.error("Failed to process or save image:", error);
-    alert(`Sorry, there was an error: ${error.message}`);
-  } finally {
-    // Clean up
-    document.body.style.cursor = 'default';
-    document.body.removeChild(processingAlert);
-    ev.target.value = null;
-  }
+    // Apply background on load
+    applyCustomBG();
 });
-
-// Listen for "Remove" button click (No changes)
-document.getElementById("removeCustomBG").addEventListener("click", async () => {
-  try {
-    await deleteBlob();
-    location.reload(); 
-  } catch (error) {
-    console.error("Failed to remove background:", error);
-    alert("Error removing background.");
-  }
-});
-
-// Apply if exists when page loads (No changes)
-window.addEventListener("DOMContentLoaded", applyCustomBG);
 
 // ------------------------------------------------------------ //
 </script>
-
 
 <script>
     const presetSelect = document.getElementById("preset");
