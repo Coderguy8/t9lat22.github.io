@@ -599,7 +599,7 @@ border: 1px solid rgba(255, 255, 255, 0.15);
     <img src="ai.png">
   </a>
   <a onclick="movie()">
-    <img src="movie.png">
+    <img src="movie2.png">
   </a>
   <a onclick="s()">
     <img  src="search.png">
@@ -812,6 +812,8 @@ backdrop-filter: blur(7px);
 
 <div id="movieDiv">
   <button class="close-btn" onclick="document.getElementById('movieDiv').style.display = 'none';">●</button>
+      <button class="full-btn" onclick="fullscreenIframe2()">●</button>
+
         <h3 style="  left: 50%; color:white; top:-9.5px; position: absolute;   transform: translateX(-50%);" >Movies</h3>
 
 
@@ -831,7 +833,20 @@ backdrop-filter: blur(7px);
     }
    
   </style>
- 
+   <script>
+    function fullscreenIframe2() {
+      let iframe = document.getElementById("mframe");
+      if (iframe.requestFullscreen) {
+        iframe.requestFullscreen();
+      } else if (iframe.mozRequestFullScreen) { 
+        iframe.mozRequestFullScreen();
+      } else if (iframe.webkitRequestFullscreen) { 
+        iframe.webkitRequestFullscreen();
+      } else if (iframe.msRequestFullscreen) { 
+        iframe.msRequestFullscreen();
+      }
+    }
+  </script>
            
 </div>
 
