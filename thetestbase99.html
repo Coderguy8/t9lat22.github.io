@@ -1211,7 +1211,6 @@ backdrop-filter: blur(7px);
 
   }
   </style>
-  <div class="resizer"></div>
 
   <script>
 let lastTime = performance.now();
@@ -1925,72 +1924,112 @@ if (selectedBackground) {
 
 
 <script>
-const win = document.getElementById("hiddenDiv");
-const resizer = win.querySelector(".resizer");
+  // Create the div
+const win = document.createElement("div");
+win.style.position = "absolute";
+win.style.width = "300px";
+win.style.height = "200px";
+win.style.top = "50%";
+win.style.left = "50%";
+win.style.transform = "translate(-50%, -50%)"; // center
+win.style.background = "#1c1c1c";
+win.style.color = "#fff";
+win.style.padding = "10px";
+win.style.boxSizing = "border-box";
+win.style.userSelect = "none";
+win.style.cursor = "default";
+win.innerText = "Drag or resize me!";
+document.body.appendChild(win);
 
+// Create resizer
+const resizer = document.createElement("div");
+resizer.style.position = "absolute";
+resizer.style.width = "15px";
+resizer.style.height = "15px";
+resizer.style.right = "0";
+resizer.style.bottom = "0";
+resizer.style.cursor = "nwse-resize";
+resizer.style.background = "rgba(255,255,255,0.3)";
+win.appendChild(resizer);
+
+// Global state
+let isDragging = false;
 let isResizing = false;
-let startX = 0, startY = 0;
-let startWidth = 0, startHeight = 0;
-let startLeft = 0, startTop = 0;
+let startX, startY, startWidth, startHeight, startLeft, startTop;
 
-// Start resizing when mousedown on the handle
+// Dragging
+win.addEventListener("mousedown", e => {
+  if (e.target === resizer) return; // don't drag if resizing
+  e.preventDefault();
+
+  isDragging = true;
+  startX = e.clientX;
+  startY = e.clientY;
+  startLeft = win.offsetLeft;
+  startTop = win.offsetTop;
+
+  win.style.transform = "none"; // remove centering transform
+  win.style.cursor = "move";
+});
+
+document.addEventListener("mousemove", e => {
+  if (isDragging) {
+    let newLeft = startLeft + (e.clientX - startX);
+    let newTop = startTop + (e.clientY - startY);
+
+    // keep inside viewport
+    newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - win.offsetWidth));
+    newTop  = Math.max(0, Math.min(newTop, window.innerHeight - win.offsetHeight));
+
+    win.style.left = newLeft + "px";
+    win.style.top = newTop + "px";
+  }
+
+  if (isResizing) {
+    let newWidth  = startWidth + (e.clientX - startX);
+    let newHeight = startHeight + (e.clientY - startY);
+
+    // constrain inside viewport
+    newWidth  = Math.max(100, Math.min(newWidth, window.innerWidth - startLeft));
+    newHeight = Math.max(100, Math.min(newHeight, window.innerHeight - startTop));
+
+    win.style.width = newWidth + "px";
+    win.style.height = newHeight + "px";
+  }
+});
+
+document.addEventListener("mouseup", () => {
+  isDragging = false;
+  isResizing = false;
+  win.style.cursor = "default";
+});
+
+// Resizing
 resizer.addEventListener("mousedown", e => {
   e.preventDefault();
   e.stopPropagation();
 
   isResizing = true;
-
   startX = e.clientX;
   startY = e.clientY;
   startWidth = win.offsetWidth;
   startHeight = win.offsetHeight;
-  startLeft = parseInt(win.style.left) || 0;
-  startTop = parseInt(win.style.top) || 0;
-
-  document.body.style.userSelect = "none"; // prevent text selection
+  startLeft = win.offsetLeft;
+  startTop = win.offsetTop;
 });
 
-// Global mousemove for resizing
-document.addEventListener("mousemove", e => {
-  if (!isResizing) return;
+// Optional: keep div inside viewport on window resize
+window.addEventListener("resize", () => {
+  const maxX = window.innerWidth - win.offsetWidth;
+  const maxY = window.innerHeight - win.offsetHeight;
+  let left = parseInt(win.style.left);
+  let top  = parseInt(win.style.top);
 
-  const deltaX = e.clientX - startX;
-  const deltaY = e.clientY - startY;
-
-  // Calculate new size and keep in viewport
-  let newWidth  = Math.max(100, Math.min(startWidth + deltaX, window.innerWidth - startLeft));
-  let newHeight = Math.max(100, Math.min(startHeight + deltaY, window.innerHeight - startTop));
-
-  win.style.width = newWidth + "px";
-  win.style.height = newHeight + "px";
-});
-
-// Stop resizing on mouseup
-document.addEventListener("mouseup", () => {
-  if (isResizing) {
-    isResizing = false;
-    document.body.style.userSelect = ""; // reset
-  }
-});
-
-// Safety: stop resizing if window loses focus
-window.addEventListener("blur", () => {
-  isResizing = false;
-  document.body.style.userSelect = "";
+  if (left > maxX) win.style.left = Math.max(0, maxX) + "px";
+  if (top > maxY) win.style.top = Math.max(0, maxY) + "px";
 });
 
 </script>
-<style>
-   .resizer {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    width: 15px;
-    height: 15px;
-    background: rgba(255,255,255,0.3);
-    cursor: nwse-resize;
-  }
-</style>
 
 
 <p style="color:#acacac; position: fixed; bottom: -3px; left: 10px; opacity: 0.6;">Version 2.5</p>
