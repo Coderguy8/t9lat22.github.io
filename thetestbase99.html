@@ -1924,28 +1924,32 @@ if (selectedBackground) {
 
 <script>
 const win = document.getElementById("hiddenDiv");
+let isPositioned = false;
 
 /* When the div becomes visible, freeze its centered position */
 const watcher = new MutationObserver(() => {
-  if (getComputedStyle(win).display !== "none") {
-    watcher.disconnect();
-
+  if (getComputedStyle(win).display !== "none" && !isPositioned) {
+    isPositioned = true;
+    
     requestAnimationFrame(() => {
-      const r = win.getBoundingClientRect();
+      const rect = win.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
 
-      // 1. Lock the pixel position exactly where it is now
-      win.style.top = r.top + "px";
-      win.style.left = r.left + "px";
+      // 1. Use absolute positioning relative to document, not viewport
+      win.style.top = (rect.top + scrollTop) + "px";
+      win.style.left = (rect.left + scrollLeft) + "px";
       
-      // 2. CRITICAL FIX: Remove CSS centering transform. 
-      // If you don't do this, resizing width causes the box to shift left, 
-      // causing the "glitchy" jumping effect.
+      // 2. Remove CSS centering transform
       win.style.transform = "none";
       
-      // 3. Reset other layout properties
-      win.style.position = "fixed"; 
+      // 3. Set positioning
+      win.style.position = "absolute"; // Use absolute instead of fixed for better compatibility
       win.style.margin = "0";
-      win.style.inset = "unset";
+      
+      // 4. Ensure dimensions are preserved
+      win.style.width = rect.width + "px";
+      win.style.height = rect.height + "px";
 
       enableDrag();
       enableResize();
@@ -1956,47 +1960,59 @@ watcher.observe(win, { attributes: true, attributeFilter: ["style", "class"] });
 
 /* ---------- DRAG ---------- */
 function enableDrag() {
-  let dragging = false, sx, sy, sl, st;
+  let dragging = false, startX, startY, startLeft, startTop;
 
-  win.addEventListener("mousedown", e => {
+  win.addEventListener("mousedown", dragStart);
+
+  function dragStart(e) {
     // Prevent dragging if clicking inputs or the resizer
-    if (e.target.classList.contains("resizer")) return;
+    if (e.target.classList.contains("resizer") || 
+        e.target.tagName === "INPUT" || 
+        e.target.tagName === "TEXTAREA" ||
+        e.target.tagName === "SELECT") {
+      return;
+    }
     
     dragging = true;
-    sx = e.clientX; 
-    sy = e.clientY;
+    startX = e.clientX; 
+    startY = e.clientY;
     
-    // Get current fixed position
-    const rect = win.getBoundingClientRect();
-    sl = rect.left; 
-    st = rect.top;
+    // Parse current position values
+    startLeft = parseInt(win.style.left) || 0;
+    startTop = parseInt(win.style.top) || 0;
 
     document.addEventListener("mousemove", dragMove);
-    document.addEventListener("mouseup", stopDrag);
-  });
+    document.addEventListener("mouseup", dragEnd);
+    
+    // Prevent text selection during drag
+    e.preventDefault();
+  }
 
   function dragMove(e) {
     if (!dragging) return;
-    e.preventDefault(); // Prevents text selection while dragging
 
-    let x = sl + (e.clientX - sx);
-    let y = st + (e.clientY - sy);
-
-    // Bounds checking (keep inside window)
-    const maxX = window.innerWidth - win.offsetWidth;
-    const maxY = window.innerHeight - win.offsetHeight;
+    // Calculate new position
+    const deltaX = e.clientX - startX;
+    const deltaY = e.clientY - startY;
     
-    x = Math.max(0, Math.min(x, maxX));
-    y = Math.max(0, Math.min(y, maxY));
+    let newLeft = startLeft + deltaX;
+    let newTop = startTop + deltaY;
 
-    win.style.left = x + "px";
-    win.style.top = y + "px";
+    // Bounds checking
+    const maxX = document.documentElement.clientWidth - win.offsetWidth;
+    const maxY = document.documentElement.clientHeight - win.offsetHeight;
+    
+    newLeft = Math.max(0, Math.min(newLeft, maxX));
+    newTop = Math.max(0, Math.min(newTop, maxY));
+
+    win.style.left = newLeft + "px";
+    win.style.top = newTop + "px";
   }
 
-  function stopDrag() {
+  function dragEnd() {
     dragging = false;
     document.removeEventListener("mousemove", dragMove);
-    document.removeEventListener("mouseup", stopDrag);
+    document.removeEventListener("mouseup", dragEnd);
   }
 }
 
@@ -2009,44 +2025,83 @@ function enableResize() {
   // Set style via JS as requested
   rz.style.cssText = "position:absolute;right:0;bottom:0;width:15px;height:15px;cursor:nwse-resize;background:rgba(0,0,0,0.1);z-index:100;";
 
-  let resizing = false, startW, startH, startX, startY;
+  let resizing = false, startWidth, startHeight, startX, startY, startLeft, startTop;
 
-  rz.addEventListener("mousedown", e => {
-    e.stopPropagation(); // Stop drag event from firing
+  rz.addEventListener("mousedown", resizeStart);
+
+  function resizeStart(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    
     resizing = true;
     
     // Capture initial values
-    startW = win.offsetWidth;
-    startH = win.offsetHeight;
+    startWidth = win.offsetWidth;
+    startHeight = win.offsetHeight;
     startX = e.clientX;
     startY = e.clientY;
+    
+    // Get current position for boundary checks
+    startLeft = parseInt(win.style.left) || 0;
+    startTop = parseInt(win.style.top) || 0;
 
     document.addEventListener("mousemove", resizeMove);
-    document.addEventListener("mouseup", stopResize);
-  });
+    document.addEventListener("mouseup", resizeEnd);
+    
+    // Prevent default browser behavior
+    return false;
+  }
 
   function resizeMove(e) {
     if (!resizing) return;
-    e.preventDefault(); // Prevents flickering cursor
 
     // Calculate new size based on mouse movement delta
-    let w = startW + (e.clientX - startX);
-    let h = startH + (e.clientY - startY);
+    const deltaX = e.clientX - startX;
+    const deltaY = e.clientY - startY;
+    
+    let newWidth = startWidth + deltaX;
+    let newHeight = startHeight + deltaY;
 
-    // Constraints
-    w = Math.max(100, Math.min(w, window.innerWidth - win.offsetLeft));
-    h = Math.max(100, Math.min(h, window.innerHeight - win.offsetTop));
+    // Constraints - ensure minimum size and doesn't go off screen
+    const maxWidth = document.documentElement.clientWidth - startLeft;
+    const maxHeight = document.documentElement.clientHeight - startTop;
+    
+    newWidth = Math.max(100, Math.min(newWidth, maxWidth));
+    newHeight = Math.max(100, Math.min(newHeight, maxHeight));
 
-    win.style.width = w + "px";
-    win.style.height = h + "px";
+    // Apply new dimensions
+    win.style.width = newWidth + "px";
+    win.style.height = newHeight + "px";
   }
 
-  function stopResize() {
+  function resizeEnd() {
     resizing = false;
     document.removeEventListener("mousemove", resizeMove);
-    document.removeEventListener("mouseup", stopResize);
+    document.removeEventListener("mouseup", resizeEnd);
   }
 }
+
+// Handle window resize to keep element within bounds
+window.addEventListener('resize', () => {
+  if (!isPositioned) return;
+  
+  requestAnimationFrame(() => {
+    const rect = win.getBoundingClientRect();
+    const maxX = document.documentElement.clientWidth - rect.width;
+    const maxY = document.documentElement.clientHeight - rect.height;
+    
+    let left = parseInt(win.style.left) || 0;
+    let top = parseInt(win.style.top) || 0;
+    
+    // Adjust position if element is outside new window bounds
+    if (left > maxX) {
+      win.style.left = Math.max(0, maxX) + "px";
+    }
+    if (top > maxY) {
+      win.style.top = Math.max(0, maxY) + "px";
+    }
+  });
+});
 </script>
 
 
