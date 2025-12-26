@@ -6,8 +6,27 @@
   <title>T9 OS Chat</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{height:100vh;display:flex;background:linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);color:#e8eaf6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;overflow:hidden}
-    .sidebar{width:280px;background:rgba(15,20,40,0.95);backdrop-filter:blur(10px);border-right:1px solid rgba(100,150,255,0.1);padding:20px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+    body{
+      height:100vh;
+      display:flex;
+      background:linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+      color:#e8eaf6;
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
+      overflow:hidden;
+    }
+    .sidebar{
+      width:280px;
+      flex-shrink:0;
+      background:rgba(15,20,40,0.95);
+      backdrop-filter:blur(10px);
+      border-right:1px solid rgba(100,150,255,0.1);
+      padding:20px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      overflow-y:auto;
+      z-index:10;
+    }
     .sidebar::-webkit-scrollbar{width:6px}
     .sidebar::-webkit-scrollbar-track{background:transparent}
     .sidebar::-webkit-scrollbar-thumb{background:rgba(100,150,255,0.3);border-radius:3px}
@@ -15,7 +34,13 @@
     .sidebar-item{padding:12px 14px;background:rgba(30,40,70,0.6);border-radius:10px;cursor:pointer;transition:all 0.2s ease;border:1px solid transparent;font-size:.95rem}
     .sidebar-item:hover{background:rgba(50,70,120,0.7);border-color:rgba(100,150,255,0.2);transform:translateX(2px)}
     .sidebar-item.active{background:linear-gradient(135deg, #4e8cff 0%, #3a6fd9 100%);border-color:rgba(100,150,255,0.3);box-shadow:0 2px 8px rgba(78,140,255,0.3)}
-    .chat-area{flex:1;display:flex;flex-direction:column;background:rgba(10,15,30,0.5)}
+    .chat-area{
+      flex:1 1 auto;
+      display:flex;
+      flex-direction:column;
+      background:rgba(10,15,30,0.5);
+      min-width:0;
+    }
     .chat-header{padding:18px 24px;background:rgba(15,25,50,0.8);backdrop-filter:blur(10px);border-bottom:1px solid rgba(100,150,255,0.15);font-size:1.15rem;color:#a8c5ff;font-weight:600;letter-spacing:0.3px}
     .messages{flex:1;overflow:auto;padding:24px;display:flex;flex-direction:column;gap:14px}
     .messages::-webkit-scrollbar{width:8px}
@@ -34,8 +59,6 @@
     .input-bar button{padding:14px 24px;background:linear-gradient(135deg, #4e8cff 0%, #3a6fd9 100%);border:none;border-radius:24px;font-weight:600;color:#fff;cursor:pointer;transition:all 0.2s ease;box-shadow:0 2px 6px rgba(78,140,255,0.3)}
     .input-bar button:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(78,140,255,0.4)}
     .input-bar button:active{transform:translateY(0)}
-    .small{font-size:.85rem;color:#8fa8d4;line-height:1.4}
-    .hidden{display:none!important}
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:1000;animation:fadeIn 0.3s ease}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     .modal{background:linear-gradient(135deg, rgba(15,25,50,0.98) 0%, rgba(20,30,60,0.98) 100%);border:1px solid rgba(100,150,255,0.3);border-radius:16px;padding:32px;min-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.5);animation:modalSlide 0.3s ease}
@@ -144,9 +167,7 @@
     sendBtn.addEventListener('click', sendMessage);
     msgInput.addEventListener('keypress', (e)=>{ if(e.key==='Enter') sendMessage(); });
 
-    publicRoomBtn.addEventListener('click', ()=>{
-      roomTitle.innerText = 'Public Chat';
-    });
+    publicRoomBtn.addEventListener('click', ()=>{ roomTitle.innerText = 'Public Chat'; });
 
     function handleNameSubmit(e){
       if(e) e.preventDefault();
@@ -155,7 +176,7 @@
       username = name.substring(0,32);
       nameModal.classList.add('hidden');
 
-      // Load existing messages
+      // Load messages with listener
       const messagesRef = ref(db, "messages/" + currentRoom);
       onChildAdded(messagesRef, (snap)=>{
         const m = snap.val();
