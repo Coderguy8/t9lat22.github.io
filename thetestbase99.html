@@ -1214,6 +1214,16 @@ backdrop-filter: blur(7px);
   </style>
 
 <style>
+   .drag-handle {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      cursor: move;
+      z-index: 5;
+    }
+
     .resizer {
       position: absolute;
       width: 25px;
@@ -1222,18 +1232,6 @@ backdrop-filter: blur(7px);
       bottom: 5px;
       cursor: nwse-resize;
       z-index: 10;
-      border-radius: 0 0 25px 0;
-    }
-
-    .resizer::after {
-      content: '';
-      position: absolute;
-      right: 8px;
-      bottom: 8px;
-      width: 10px;
-      height: 10px;
-      border-right: 2px solid rgba(255,255,255,0.4);
-      border-bottom: 2px solid rgba(255,255,255,0.4);
     }
 </style>
 
@@ -1954,8 +1952,22 @@ if (selectedBackground) {
 
 <script>
 const win = document.getElementById("hiddenDiv");
-const header = win.querySelector(".window-header");
-const resizer = win.querySelector(".resizer");
+
+// Create drag handle
+let dragHandle = win.querySelector(".drag-handle");
+if (!dragHandle) {
+  dragHandle = document.createElement("div");
+  dragHandle.className = "drag-handle";
+  win.appendChild(dragHandle);
+}
+
+// Create resizer
+let resizer = win.querySelector(".resizer");
+if (!resizer) {
+  resizer = document.createElement("div");
+  resizer.className = "resizer";
+  win.appendChild(resizer);
+}
 
 let isDragging = false;
 let isResizing = false;
@@ -1966,39 +1978,32 @@ let startY = 0;
 let startWidth = 0;
 let startHeight = 0;
 
-// DRAGGING - Only from header
-header.addEventListener("mousedown", e => {
+dragHandle.addEventListener("mousedown", e => {
   isDragging = true;
-  
-  // Get current position (handling both px and transform)
   const rect = win.getBoundingClientRect();
   offsetX = e.clientX - rect.left;
   offsetY = e.clientY - rect.top;
   
-  // Remove transform centering if it exists
   win.style.transform = 'none';
   win.style.left = rect.left + 'px';
   win.style.top = rect.top + 'px';
   
   e.preventDefault();
+  e.stopPropagation();
 });
 
-// RESIZING - Only from resizer corner
 resizer.addEventListener("mousedown", e => {
   isResizing = true;
   startX = e.clientX;
   startY = e.clientY;
   
-  // Get actual rendered dimensions
   const rect = win.getBoundingClientRect();
   startWidth = rect.width;
   startHeight = rect.height;
   
-  // Remove percentage-based sizing
   win.style.width = startWidth + 'px';
   win.style.height = startHeight + 'px';
   
-  // Remove transform if present
   if (win.style.transform !== 'none') {
     win.style.transform = 'none';
     win.style.left = rect.left + 'px';
@@ -2009,18 +2014,16 @@ resizer.addEventListener("mousedown", e => {
   e.stopPropagation();
 });
 
-// MOUSE MOVE - Handle both dragging and resizing
 document.addEventListener("mousemove", e => {
   if (isDragging) {
     let newLeft = e.clientX - offsetX;
     let newTop = e.clientY - offsetY;
 
-    // Keep within viewport bounds
     const maxX = window.innerWidth - win.offsetWidth;
     const maxY = window.innerHeight - win.offsetHeight;
 
     newLeft = Math.max(0, Math.min(newLeft, maxX));
-    newTop = Math.max(0, Math.min(newTop, maxY));
+    newTop = Math.max(-20, Math.min(newTop, maxY));
 
     win.style.left = newLeft + "px";
     win.style.top = newTop + "px";
@@ -2033,7 +2036,6 @@ document.addEventListener("mousemove", e => {
     let newWidth = startWidth + deltaX;
     let newHeight = startHeight + deltaY;
 
-    // Keep minimum size
     const currentLeft = parseInt(win.style.left) || 0;
     const currentTop = parseInt(win.style.top) || 0;
     const maxWidth = window.innerWidth - currentLeft - 20;
@@ -2047,13 +2049,17 @@ document.addEventListener("mousemove", e => {
   }
 });
 
-// MOUSE UP - Stop dragging/resizing
 document.addEventListener("mouseup", () => {
   isDragging = false;
   isResizing = false;
 });
 
-// Keep window in viewport on window resize
+// Also handle mouse leaving the window
+document.addEventListener("mouseleave", () => {
+  isDragging = false;
+  isResizing = false;
+});
+
 window.addEventListener("resize", () => {
   const rect = win.getBoundingClientRect();
   const maxX = window.innerWidth - rect.width;
