@@ -1967,6 +1967,13 @@ let dragHandle = win.querySelector(".drag-handle");
 if (!dragHandle) {
   dragHandle = document.createElement("div");
   dragHandle.className = "drag-handle";
+  dragHandle.style.position = "absolute";
+  dragHandle.style.top = "0";
+  dragHandle.style.left = "0";
+  dragHandle.style.right = "0";
+  dragHandle.style.height = "40px";
+  dragHandle.style.cursor = "move";
+  dragHandle.style.zIndex = "5";
   win.appendChild(dragHandle);
 }
 
@@ -1975,6 +1982,14 @@ let resizer = win.querySelector(".resizer");
 if (!resizer) {
   resizer = document.createElement("div");
   resizer.className = "resizer";
+  resizer.style.position = "absolute";
+  resizer.style.width = "30px";
+  resizer.style.height = "30px";
+  resizer.style.right = "0";
+  resizer.style.bottom = "0";
+  resizer.style.cursor = "nwse-resize";
+  resizer.style.zIndex = "10";
+  resizer.style.background = "rgba(255, 255, 255, 0.1)";
   win.appendChild(resizer);
 }
 
@@ -1987,9 +2002,24 @@ let startY = 0;
 let startWidth = 0;
 let startHeight = 0;
 
+// Disable iframe pointer events during drag/resize
+function disableIframe() {
+  const iframes = win.querySelectorAll('iframe');
+  iframes.forEach(iframe => {
+    iframe.style.pointerEvents = 'none';
+  });
+}
+
+function enableIframe() {
+  const iframes = win.querySelectorAll('iframe');
+  iframes.forEach(iframe => {
+    iframe.style.pointerEvents = 'auto';
+  });
+}
+
 dragHandle.addEventListener("mousedown", e => {
   isDragging = true;
-  win.classList.add('dragging');
+  disableIframe();
   
   const rect = win.getBoundingClientRect();
   offsetX = e.clientX - rect.left;
@@ -1998,6 +2028,8 @@ dragHandle.addEventListener("mousedown", e => {
   win.style.transform = 'none';
   win.style.left = rect.left + 'px';
   win.style.top = rect.top + 'px';
+  win.style.margin = '0';
+  win.style.inset = 'auto';
   
   e.preventDefault();
   e.stopPropagation();
@@ -2005,7 +2037,7 @@ dragHandle.addEventListener("mousedown", e => {
 
 resizer.addEventListener("mousedown", e => {
   isResizing = true;
-  win.classList.add('resizing');
+  disableIframe();
   
   startX = e.clientX;
   startY = e.clientY;
@@ -2021,6 +2053,8 @@ resizer.addEventListener("mousedown", e => {
     win.style.transform = 'none';
     win.style.left = rect.left + 'px';
     win.style.top = rect.top + 'px';
+    win.style.margin = '0';
+    win.style.inset = 'auto';
   }
   
   e.preventDefault();
@@ -2063,16 +2097,19 @@ document.addEventListener("mousemove", e => {
 });
 
 document.addEventListener("mouseup", () => {
+  if (isDragging || isResizing) {
+    enableIframe();
+  }
   isDragging = false;
   isResizing = false;
-  win.classList.remove('dragging', 'resizing');
 });
 
-// Also handle mouse leaving the window
 document.addEventListener("mouseleave", () => {
+  if (isDragging || isResizing) {
+    enableIframe();
+  }
   isDragging = false;
   isResizing = false;
-  win.classList.remove('dragging', 'resizing');
 });
 
 window.addEventListener("resize", () => {
