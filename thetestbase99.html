@@ -1214,7 +1214,16 @@ backdrop-filter: blur(7px);
   </style>
 
 <style>
-   .drag-handle {
+    #hiddenDiv iframe {
+      pointer-events: none;
+    }
+
+    #hiddenDiv.dragging iframe,
+    #hiddenDiv.resizing iframe {
+      pointer-events: none;
+    }
+
+    .drag-handle {
       position: absolute;
       top: 0;
       left: 0;
@@ -1226,16 +1235,16 @@ backdrop-filter: blur(7px);
 
     .resizer {
       position: absolute;
-      width: 25px;
-      height: 25px;
-      right: 5px;
-      bottom: 5px;
+      width: 30px;
+      height: 30px;
+      right: 0;
+      bottom: 0;
       cursor: nwse-resize;
       z-index: 10;
+      background: rgba(255, 255, 255, 0.1);
     }
 </style>
 
-  <div class="resizer"></div>
 
 
 
@@ -1980,6 +1989,8 @@ let startHeight = 0;
 
 dragHandle.addEventListener("mousedown", e => {
   isDragging = true;
+  win.classList.add('dragging');
+  
   const rect = win.getBoundingClientRect();
   offsetX = e.clientX - rect.left;
   offsetY = e.clientY - rect.top;
@@ -1994,6 +2005,8 @@ dragHandle.addEventListener("mousedown", e => {
 
 resizer.addEventListener("mousedown", e => {
   isResizing = true;
+  win.classList.add('resizing');
+  
   startX = e.clientX;
   startY = e.clientY;
   
@@ -2022,8 +2035,8 @@ document.addEventListener("mousemove", e => {
     const maxX = window.innerWidth - win.offsetWidth;
     const maxY = window.innerHeight - win.offsetHeight;
 
-    newLeft = Math.max(0, Math.min(newLeft, maxX));
-    newTop = Math.max(-20, Math.min(newTop, maxY));
+    newLeft = Math.min(newLeft, maxX);
+    newTop = Math.min(newTop, maxY);
 
     win.style.left = newLeft + "px";
     win.style.top = newTop + "px";
@@ -2038,8 +2051,8 @@ document.addEventListener("mousemove", e => {
 
     const currentLeft = parseInt(win.style.left) || 0;
     const currentTop = parseInt(win.style.top) || 0;
-    const maxWidth = window.innerWidth - currentLeft - 20;
-    const maxHeight = window.innerHeight - currentTop - 20;
+    const maxWidth = window.innerWidth - currentLeft;
+    const maxHeight = window.innerHeight - currentTop;
 
     newWidth = Math.max(300, Math.min(newWidth, maxWidth));
     newHeight = Math.max(200, Math.min(newHeight, maxHeight));
@@ -2052,12 +2065,14 @@ document.addEventListener("mousemove", e => {
 document.addEventListener("mouseup", () => {
   isDragging = false;
   isResizing = false;
+  win.classList.remove('dragging', 'resizing');
 });
 
 // Also handle mouse leaving the window
 document.addEventListener("mouseleave", () => {
   isDragging = false;
   isResizing = false;
+  win.classList.remove('dragging', 'resizing');
 });
 
 window.addEventListener("resize", () => {
