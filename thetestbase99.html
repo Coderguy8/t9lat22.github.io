@@ -1969,7 +1969,7 @@ if (!dragHandle) {
   dragHandle.className = "drag-handle";
   dragHandle.style.position = "absolute";
   dragHandle.style.top = "0";
-  dragHandle.style.left = "0";
+  dragHandle.style.left = "50px"; // Start after the buttons
   dragHandle.style.right = "0";
   dragHandle.style.height = "40px";
   dragHandle.style.cursor = "move";
@@ -2020,11 +2020,6 @@ function enableIframe() {
 }
 
 dragHandle.addEventListener("mousedown", e => {
-  // Don't drag if clicking on buttons or interactive elements
-  if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-    return;
-  }
-  
   const rect = win.getBoundingClientRect();
   
   // Convert positioning BEFORE setting isDragging
@@ -2141,7 +2136,7 @@ window.addEventListener("resize", () => {
   }
 });
 </script>
-<!--Test-->
+<!--Test2-->
 
 
 
