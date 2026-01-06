@@ -336,22 +336,21 @@ const profanityPatterns = [
   /n[i1!|]+b+[b8]+[ae@3]+/gi,
   
   // F-word variations
-  /f+[\s\.\-_]*u+[\s\.\-_]*c+[\s\.\-_]*k+/gi,
-  /f+[\s\.\-_]*[u@]+[\s\.\-_]*[c(<]+[\s\.\-_]*[k|!]+/gi,
-  /ph+u+c+k+/gi,
+  /\bf+[\s\.\-_]*u+[\s\.\-_]*c+[\s\.\-_]*k+\b/gi,
+  /\bf+[\s\.\-_]*[u@]+[\s\.\-_]*[c(<]+[\s\.\-_]*[k|!]+\b/gi,
+  /\bph+u+c+k+\b/gi,
   
   // Other slurs and profanity
-  /s+[\s\.\-_]*h+[\s\.\-_]*[i1!]+[\s\.\-_]*t+/gi,
-  /b+[\s\.\-_]*[i1!]+[\s\.\-_]*t+[\s\.\-_]*c+[\s\.\-_]*h+/gi,
-  /a+[\s\.\-_]*s+[\s\.\-_]*s+/gi,
-  /d+[\s\.\-_]*a+[\s\.\-_]*m+[\s\.\-_]*n+/gi,
-  /h+[\s\.\-_]*e+[\s\.\-_]*l+[\s\.\-_]*l+/gi,
-  /c+[\s\.\-_]*r+[\s\.\-_]*a+[\s\.\-_]*p+/gi,
-  /p+[\s\.\-_]*i+[\s\.\-_]*s+[\s\.\-_]*s+/gi,
+  /\bs+[\s\.\-_]*h+[\s\.\-_]*[i1!]+[\s\.\-_]*t+\b/gi,
+  /\bb+[\s\.\-_]*[i1!]+[\s\.\-_]*t+[\s\.\-_]*c+[\s\.\-_]*h+\b/gi,
+  /\bd+[\s\.\-_]*a+[\s\.\-_]*m+[\s\.\-_]*n+\b/gi,
+  /\bh+[\s\.\-_]*e+[\s\.\-_]*l+[\s\.\-_]*l+\b/gi,
+  /\bc+[\s\.\-_]*r+[\s\.\-_]*a+[\s\.\-_]*p+\b/gi,
+  /\bp+[\s\.\-_]*i+[\s\.\-_]*s+[\s\.\-_]*s+\b/gi,
   
   // Homophobic slurs
-  /f+[\s\.\-_]*a+[\s\.\-_]*g+/gi,
-  /f+[\s\.\-_]*[a@4]+[\s\.\-_]*[gq9]+[o0]*[t+]*/gi,
+  /\bf+[\s\.\-_]*a+[\s\.\-_]*g+\b/gi,
+  /\bf+[\s\.\-_]*[a@4]+[\s\.\-_]*[gq9]+[o0]*[t+]*\b/gi,
   
   // Racial slurs
   /ch+[i1!]+n+k+/gi,
@@ -395,7 +394,7 @@ function containsProfanity(text) {
   
   const normalized = normalizeText(text);
   const simplePatterns = [
-    'fuck', 'shit', 'bitch', 'ass', 'damn', 'hell', 'crap', 'piss',
+    'fuck', 'shit', 'bitch', 'damn', 'hell', 'crap', 'piss',
     'nigger', 'nigga', 'fag', 'faggot', 'chink', 'spic', 'wetback',
     'niger', 'niga', 'nibba'
   ];
