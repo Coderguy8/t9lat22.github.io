@@ -146,15 +146,12 @@
   </div>
 </div>
 
-<!-- Ban System Script - Load Firebase Compat FIRST -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-  // ========== BAN SYSTEM CONFIG ==========
   const OWNER_ID = "0635354315";
   const ID_KEY = "numericUserID";
-  // =======================================
 
   const banFirebaseConfig = {
     apiKey: "AIzaSyD74Fi2RKsvv1sXTAEIiTYrRKCv22MRhh8",
@@ -176,7 +173,6 @@
     return random + timestamp;
   }
 
-  // Protected ban system
   (function() {
     'use strict';
     
@@ -229,7 +225,6 @@
         originalSetItem.call(localStorage, ID_KEY, myID);
       }
 
-      // Expose myID and banDB globally for chat filter
       window.currentUserID = myID;
       window.banDatabase = banDB;
 
@@ -252,7 +247,6 @@
         }
       });
 
-      // Owner ban/unban controls
       document.addEventListener("keydown", async (e) => {
         if (myID !== OWNER_ID) return;
         if (e.key === ",") {
@@ -285,10 +279,9 @@
   })();
 </script>
 
-<!-- Chat Application Script - Load AFTER ban system -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getDatabase, ref, push, onChildAdded, off } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getDatabase, ref, push, onChildAdded, off, query, limitToLast } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD74Fi2RKsvv1sXTAEIiTYrRKCv22MRhh8",
@@ -326,43 +319,32 @@ let violationCount = 0;
 const MAX_VIOLATIONS = 3;
 const MAX_CHARS = 600;
 let lastMessageTime = 0;
-const MESSAGE_COOLDOWN = 5000; // 5 seconds in milliseconds
+const MESSAGE_COOLDOWN = 5000;
+const MAX_MESSAGES = 100;
+let messageQueue = [];
+let isProcessingQueue = false;
 
-// ========== ADVANCED CHAT FILTER ==========
 const profanityPatterns = [
-  // N-word variations
   /n+[i1!|]+[gq9]+[e3a@]+r+/gi,
   /n+[i1!|]+[gq9]+[ae@3]+/gi,
   /n[i1!|]+b+[b8]+[ae@3]+/gi,
-  
-  // F-word variations
   /\bf+[\s\.\-_]*u+[\s\.\-_]*c+[\s\.\-_]*k+\b/gi,
   /\bf+[\s\.\-_]*[u@]+[\s\.\-_]*[c(<]+[\s\.\-_]*[k|!]+\b/gi,
   /\bph+u+c+k+\b/gi,
-  
-  // Other slurs and profanity
   /\bs+[\s\.\-_]*h+[\s\.\-_]*[i1!]+[\s\.\-_]*t+\b/gi,
   /\bb+[\s\.\-_]*[i1!]+[\s\.\-_]*t+[\s\.\-_]*c+[\s\.\-_]*h+\b/gi,
   /\bd+[\s\.\-_]*a+[\s\.\-_]*m+[\s\.\-_]*n+\b/gi,
   /\bh+[\s\.\-_]*e+[\s\.\-_]*l+[\s\.\-_]*l+\b/gi,
   /\bc+[\s\.\-_]*r+[\s\.\-_]*a+[\s\.\-_]*p+\b/gi,
   /\bp+[\s\.\-_]*i+[\s\.\-_]*s+[\s\.\-_]*s+\b/gi,
-  
-  // Homophobic slurs
   /\bf+[\s\.\-_]*a+[\s\.\-_]*g+\b/gi,
   /\bf+[\s\.\-_]*[a@4]+[\s\.\-_]*[gq9]+[o0]*[t+]*\b/gi,
-  
-  // Racial slurs
   /ch+[i1!]+n+k+/gi,
   /sp+[i1!]+c+/gi,
   /w+[e3]+t+b+[a@]+c+k+/gi,
-  
-  // Leet speak and symbol substitutions
   /[f₣ƒ]+[u_µ]+[c¢]+[k|<]+/gi,
   /[b8]+[i!1|]+[t+]+[c¢(<]+[h#]+/gi,
   /[s$5]+[h#]+[i!1|]+[t+]/gi,
-  
-  // Unicode lookalikes
   /[\u0192\uff46]+[\u03bc\uff55]+[\u00a2\uff43]+[\uff4b]/gi
 ];
 
@@ -426,7 +408,6 @@ async function handleViolation() {
   if (violationCount >= MAX_VIOLATIONS) {
     showWarning(`You have been banned for ${MAX_VIOLATIONS} chat filter violations.`);
     
-    // Auto-ban user using the ban system's database
     const bannedRef = window.banDatabase.ref("bannedIDs");
     const snapshot = await bannedRef.get();
     let bannedIDs = snapshot.val() || [];
@@ -454,21 +435,49 @@ function appendMessage(payload, skipOwn=false){
   div.innerHTML = `<div class="msg-name">${escapeHtml(displayName)}</div>
                    <div class="msg-bubble">${escapeHtml(payload.text)}</div>`;
   messagesEl.appendChild(div);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
+  
+  const messages = messagesEl.children;
+  if(messages.length > MAX_MESSAGES){
+    messages[0].remove();
+  }
+  
+  const isNearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 150;
+  if(isNearBottom){
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
 }
 
 function clearMessages(){ messagesEl.innerHTML=''; }
 
+function processMessageQueue(){
+  if(isProcessingQueue || messageQueue.length === 0) return;
+  isProcessingQueue = true;
+  
+  const batch = messageQueue.splice(0, 5);
+  batch.forEach(msg => appendMessage(msg, false));
+  
+  isProcessingQueue = false;
+  if(messageQueue.length > 0){
+    setTimeout(processMessageQueue, 50);
+  }
+}
+
 function loadMessages(room){
   if(currentListener) off(currentListener);
   clearMessages();
+  messageQueue = [];
+  
   const messagesRef = ref(db, "messages/" + room);
+  const limitedQuery = query(messagesRef, limitToLast(100));
   currentListener = messagesRef;
-  onChildAdded(messagesRef, snap=>{
+  
+  onChildAdded(limitedQuery, snap=>{
     const m = snap.val();
     if(!m) return;
-    // Don't skip own messages - show all messages from Firebase
-    appendMessage(m, false);
+    messageQueue.push(m);
+    if(!isProcessingQueue){
+      processMessageQueue();
+    }
   });
 }
 
@@ -476,7 +485,6 @@ async function sendMessage(){
   const txt = msgInput.value.trim();
   if(!txt) return;
   
-  // Check cooldown
   const now = Date.now();
   const timeLeft = MESSAGE_COOLDOWN - (now - lastMessageTime);
   if (timeLeft > 0) {
@@ -496,10 +504,8 @@ async function sendMessage(){
     return;
   }
   
-  // Disable send button during cooldown
   sendBtn.disabled = true;
   
-  // Send to Firebase
   const messagePayload = {name: username, id: myID, text: txt, timestamp: Date.now()};
   try {
     await push(ref(db, "messages/" + currentRoom), messagePayload);
@@ -507,7 +513,6 @@ async function sendMessage(){
     updateCharCounter();
     lastMessageTime = now;
     
-    // Re-enable button after cooldown
     setTimeout(() => {
       sendBtn.disabled = false;
     }, MESSAGE_COOLDOWN);
@@ -554,7 +559,6 @@ nameSubmit.addEventListener('click', handleNameSubmit);
 nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') handleNameSubmit(e); });
 setTimeout(()=>nameInput.focus(),100);
 
-// ROOM MANAGEMENT
 let joinedRooms = new Set(['public']);
 
 function refreshJoinedRoomsUI(){
@@ -572,6 +576,7 @@ function refreshJoinedRoomsUI(){
 function switchRoom(room){
   currentRoom = room;
   roomTitle.innerText = room==='public' ? 'Public Chat' : room;
+  messageQueue = [];
   loadMessages(currentRoom);
   Array.from(document.querySelectorAll('.sidebar-item')).forEach(el=>el.classList.remove('active'));
   if(room==='public'){ publicRoomBtn.classList.add('active'); }
