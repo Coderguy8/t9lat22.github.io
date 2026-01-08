@@ -2341,6 +2341,90 @@ wins.forEach(win => {
 
 
 
+<script>
+/* ===============================
+   T9 OS – Hidden Iframe Freezer
+   =============================== */
+
+const APP_WINDOWS = [
+  "hiddenDiv",
+  "aiDiv",
+  "movieDiv",
+  "musicDiv",
+  "terminalDiv",
+  "searchDiv",
+  "ChatDiv",
+  "emulatorDiv",
+  "appsDiv"
+];
+
+// Save original srcs
+const iframeSrcMap = new Map();
+
+// Register all iframes
+function registerIframes() {
+  document.querySelectorAll("iframe").forEach(frame => {
+    if (!iframeSrcMap.has(frame)) {
+      iframeSrcMap.set(frame, frame.src);
+    }
+  });
+}
+registerIframes();
+
+// Freeze iframe when its parent window is hidden
+function freezeIframe(containerId) {
+  const box = document.getElementById(containerId);
+  if (!box) return;
+
+  const frames = box.querySelectorAll("iframe");
+  frames.forEach(f => {
+    if (!f.dataset.frozen) {
+      f.dataset.frozen = "true";
+      iframeSrcMap.set(f, f.src);
+      f.src = "about:blank";     // fully unloads CPU/GPU
+    }
+  });
+}
+
+// Restore iframe when window opens
+function restoreIframe(containerId) {
+  const box = document.getElementById(containerId);
+  if (!box) return;
+
+  const frames = box.querySelectorAll("iframe");
+  frames.forEach(f => {
+    if (f.dataset.frozen === "true") {
+      f.src = iframeSrcMap.get(f);
+      delete f.dataset.frozen;
+    }
+  });
+}
+
+// Hook into all window toggles
+APP_WINDOWS.forEach(id => {
+  const box = document.getElementById(id);
+  if (!box) return;
+
+  const observer = new MutationObserver(() => {
+    if (getComputedStyle(box).display === "none") {
+      freezeIframe(id);
+    } else {
+      restoreIframe(id);
+    }
+  });
+
+  observer.observe(box, { attributes: true, attributeFilter: ["style"] });
+});
+
+// Also freeze everything when tab hidden
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    APP_WINDOWS.forEach(freezeIframe);
+  } else {
+    APP_WINDOWS.forEach(restoreIframe);
+  }
+});
+</script>
 
 
 
