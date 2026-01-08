@@ -2343,14 +2343,13 @@ wins.forEach(win => {
 
 <script>
 /* ===============================
-   T9 OS – Hidden Iframe Freezer
+   T9 OS – Hidden Iframe Pause Engine
    =============================== */
 
 const APP_WINDOWS = [
   "hiddenDiv",
   "aiDiv",
   "movieDiv",
-  "musicDiv",
   "terminalDiv",
   "searchDiv",
   "ChatDiv",
@@ -2358,49 +2357,45 @@ const APP_WINDOWS = [
   "appsDiv"
 ];
 
-// Save original srcs
-const iframeSrcMap = new Map();
+const PAUSE_MESSAGE = { type: "pause" };
+const RESUME_MESSAGE = { type: "resume" };
 
-// Register all iframes
-function registerIframes() {
-  document.querySelectorAll("iframe").forEach(frame => {
-    if (!iframeSrcMap.has(frame)) {
-      iframeSrcMap.set(frame, frame.src);
-    }
-  });
+// Send message to iframe to pause/resume (iframes must support this)
+function pauseIframe(frame) {
+  if (!frame.dataset.paused) {
+    frame.contentWindow?.postMessage(PAUSE_MESSAGE, "*");
+    frame.dataset.paused = "true";
+  }
 }
-registerIframes();
 
-// Freeze iframe when its parent window is hidden
+function resumeIframe(frame) {
+  if (frame.dataset.paused) {
+    frame.contentWindow?.postMessage(RESUME_MESSAGE, "*");
+    delete frame.dataset.paused;
+  }
+}
+
+// Freeze iframes in a hidden container
 function freezeIframe(containerId) {
   const box = document.getElementById(containerId);
   if (!box) return;
 
-  const frames = box.querySelectorAll("iframe");
-  frames.forEach(f => {
-    if (!f.dataset.frozen) {
-      f.dataset.frozen = "true";
-      iframeSrcMap.set(f, f.src);
-      f.src = "about:blank";     // fully unloads CPU/GPU
-    }
+  box.querySelectorAll("iframe").forEach(frame => {
+    pauseIframe(frame);
   });
 }
 
-// Restore iframe when window opens
+// Restore iframes when container shows
 function restoreIframe(containerId) {
   const box = document.getElementById(containerId);
   if (!box) return;
 
-  const frames = box.querySelectorAll("iframe");
-  frames.forEach(f => {
-    if (f.dataset.frozen === "true") {
-      f.src = iframeSrcMap.get(f);
-      delete f.dataset.frozen;
-    }
+  box.querySelectorAll("iframe").forEach(frame => {
+    resumeIframe(frame);
   });
 }
 
-// Hook into all window toggles
+// Watch each window for display changes
 APP_WINDOWS.forEach(id => {
   const box = document.getElementById(id);
   if (!box) return;
@@ -2416,7 +2411,7 @@ APP_WINDOWS.forEach(id => {
   observer.observe(box, { attributes: true, attributeFilter: ["style"] });
 });
 
-// Also freeze everything when tab hidden
+// Pause everything when the tab is hidden
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     APP_WINDOWS.forEach(freezeIframe);
@@ -2425,6 +2420,7 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 </script>
+
 
 
 
