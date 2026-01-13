@@ -754,36 +754,51 @@ border: 1px solid rgba(255, 255, 255, 0.15);
 
 
 
-      <h2 style="transform: translateX(-50%); top:20px; position:fixed; left:50%; text-align:center; color:white; ">CPU  usage:   <span id="cpu"></span></h2>
-<img src="memory.png" style="width:30px; bottom:0; position: fixed; transform: translateX(-50%); left:50%;">
- 
-<script>
-  function updateStats() {
-    let cpuPercent = Math.floor(Math.random() * 100);
-    document.getElementById('cpu').textContent = cpuPercent + '%';
-  }
+ <span id="wIcon">⌛</span>
+  <span id="wCond">Loading</span>
+  <span id="wTemp">--°</span>
+<style>
+  #wIcon{font-size:16px}
 
-  setInterval(updateStats, 1000);
+</style>
+<script>
+async function loadWidgetWeather(){
+  const loc = await fetch("https://ipapi.co/json/").then(r=>r.json());
+  const lat = loc.latitude;
+  const lon = loc.longitude;
+
+  const data = await fetch(
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
+  ).then(r=>r.json());
+
+  const w = data.current_weather;
+  const code = w.weathercode;
+  const temp = Math.round(w.temperature);
+
+  const map = {
+    0:["☀️","Sunny"],
+    1:["🌤️","Mostly Sunny"],
+    2:["⛅","Partly Cloudy"],
+    3:["☁️","Cloudy"],
+    45:["🌫️","Foggy"],
+    51:["🌦️","Drizzle"],
+    61:["🌧️","Rainy"],
+    63:["🌧️","Rainy"],
+    65:["🌧️","Heavy Rain"],
+    71:["❄️","Snowy"],
+    80:["🌧️","Showers"],
+    95:["⛈️","Storm"]
+  };
+
+  const d = map[code] || ["🌡️","Weather"];
+
+  document.getElementById("wIcon").textContent = d[0];
+  document.getElementById("wCond").textContent = d[1];
+  document.getElementById("wTemp").textContent = temp + "°C";
+}
+loadWidgetWeather();
 </script>
 
-<style>
-  #cpu{
-      font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
-      text-shadow: white 10px;
-  }
-</style>
-    
-
-
-
-
-
-
-
-        
-       
-
-          
 </div>
 
 <div id="ChatDiv">
